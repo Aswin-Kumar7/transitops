@@ -26,10 +26,11 @@ router.get(
     const now = new Date();
     const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
 
-    const [statusGroups, tripStatusGroups, activeTrips, pendingTrips, driversOnDuty, regionRows, recentTrips, trendTrips] =
+    const [statusGroups, tripStatusGroups, driverStatusGroups, activeTrips, pendingTrips, driversOnDuty, regionRows, recentTrips, trendTrips] =
       await Promise.all([
         prisma.vehicle.groupBy({ by: ['status'], _count: { _all: true }, where: vehicleWhere }),
         prisma.trip.groupBy({ by: ['status'], _count: { _all: true } }),
+        prisma.driver.groupBy({ by: ['status'], _count: { _all: true } }),
         prisma.trip.count({ where: { status: 'DISPATCHED' } }),
         prisma.trip.count({ where: { status: 'DRAFT' } }),
         prisma.driver.count({ where: { status: { in: ['AVAILABLE', 'ON_TRIP'] } } }),
@@ -66,6 +67,7 @@ router.get(
       },
       vehicleStatus: statusGroups.map((g) => ({ status: g.status, count: g._count._all })),
       tripStatus: tripStatusGroups.map((g) => ({ status: g.status, count: g._count._all })),
+      driverStatus: driverStatusGroups.map((g) => ({ status: g.status, count: g._count._all })),
       activityTrend,
       filters: {
         types: Object.values(VehicleType),
