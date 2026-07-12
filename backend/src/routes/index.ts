@@ -8,6 +8,7 @@ import tripRoutes from '../modules/trips/trips.routes';
 import fuelRoutes from '../modules/fuel/fuel.routes';
 import analyticsRoutes from '../modules/analytics/analytics.routes';
 import settingsRoutes from '../modules/settings/settings.routes';
+import searchRoutes from '../modules/search/search.routes';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/trips', tripRoutes);
 router.use('/fuel', fuelRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/search', searchRoutes);
 
 export default router;

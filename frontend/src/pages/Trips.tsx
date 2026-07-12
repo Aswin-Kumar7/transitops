@@ -33,7 +33,16 @@ export default function Trips() {
   const [cancelling, setCancelling] = useState<Trip | null>(null);
   const [endOdometer, setEndOdometer] = useState('');
   const [revenue, setRevenue] = useState('');
+  const [fuelLiters, setFuelLiters] = useState('');
+  const [fuelCost, setFuelCost] = useState('');
+  const [expenseToll, setExpenseToll] = useState('');
+  const [expenseOther, setExpenseOther] = useState('');
   const [cancelReason, setCancelReason] = useState('');
+
+  const resetComplete = () => {
+    setCompleting(null); setEndOdometer(''); setRevenue('');
+    setFuelLiters(''); setFuelCost(''); setExpenseToll(''); setExpenseOther('');
+  };
 
   const load = async () => {
     setLoading(true);
@@ -74,8 +83,14 @@ export default function Trips() {
     event.preventDefault();
     if (!completing) return;
     try {
-      await api.patch<Trip>(`/trips/${completing.id}/complete`, { endOdometer, ...(revenue ? { revenue } : {}) });
-      setCompleting(null); setEndOdometer(''); setRevenue(''); await load();
+      await api.patch<Trip>(`/trips/${completing.id}/complete`, {
+        endOdometer,
+        ...(revenue ? { revenue } : {}),
+        ...(fuelLiters ? { fuelLiters, fuelCost: fuelCost || 0 } : {}),
+        ...(expenseToll ? { expenseToll } : {}),
+        ...(expenseOther ? { expenseOther } : {}),
+      });
+      resetComplete(); await load();
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not complete trip'); }
   };
   const cancel = async (event: FormEvent) => {
@@ -106,10 +121,27 @@ export default function Trips() {
         <Card className="xl:col-span-3"><CardHeader><CardTitle>Live board</CardTitle></CardHeader><CardContent className="space-y-3">{loading ? <p className="text-muted-foreground">Loading trips…</p> : trips.length === 0 ? <p className="text-muted-foreground">No trips have been planned yet.</p> : trips.map((trip) => {
           const overCapacity = Boolean(trip.vehicle && trip.cargoWeightKg > trip.vehicle.capacityKg);
           return <div key={trip.id} className="rounded-lg border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-semibold">{trip.tripCode} <span className="font-normal text-muted-foreground">{trip.source} → {trip.destination}</span></div><p className="mt-1 text-sm text-muted-foreground">{trip.cargoWeightKg} kg · {trip.plannedDistanceKm} km · {trip.vehicle?.name ?? 'Vehicle pending'} · {trip.driver?.name ?? 'Driver pending'}</p>{trip.status === 'CANCELLED' && trip.cancelReason && <p className="mt-1 text-xs text-muted-foreground">Cancelled: {trip.cancelReason}</p>}</div><StatusBadge status={trip.status} /></div>
-            {writable && <div className="mt-3 flex flex-wrap gap-2">{trip.status === 'DRAFT' && <Button size="sm" onClick={() => void dispatch(trip)} disabled={overCapacity || !trip.vehicle || !trip.driver}>Dispatch</Button>}{trip.status === 'DISPATCHED' && <><Button size="sm" onClick={() => { setCompleting(trip); setEndOdometer(''); setRevenue(''); }}>Complete</Button><Button size="sm" variant="outline" onClick={() => { setCancelling(trip); setCancelReason(''); }}>Cancel</Button></>}{trip.status === 'DRAFT' && <Button size="sm" variant="outline" onClick={() => { setCancelling(trip); setCancelReason(''); }}>Cancel</Button>}</div>}</div>;
+            {writable && <div className="mt-3 flex flex-wrap gap-2">{trip.status === 'DRAFT' && <Button size="sm" onClick={() => void dispatch(trip)} disabled={overCapacity || !trip.vehicle || !trip.driver}>Dispatch</Button>}{trip.status === 'DISPATCHED' && <><Button size="sm" onClick={() => { resetComplete(); setCompleting(trip); }}>Complete</Button><Button size="sm" variant="outline" onClick={() => { setCancelling(trip); setCancelReason(''); }}>Cancel</Button></>}{trip.status === 'DRAFT' && <Button size="sm" variant="outline" onClick={() => { setCancelling(trip); setCancelReason(''); }}>Cancel</Button>}</div>}</div>;
         })}<p className="border-t pt-4 text-xs text-muted-foreground">On complete: odometer → fuel log → expenses → vehicle and driver available.</p></CardContent></Card>
       </div>
-      {completing && <Card><CardHeader><CardTitle>Complete {completing.tripCode}</CardTitle></CardHeader><CardContent><form className="flex flex-wrap items-end gap-4" onSubmit={complete}><div><Label htmlFor="end-odometer">End odometer (start: {completing.startOdometer ?? '—'})</Label><Input id="end-odometer" required type="number" min={completing.startOdometer ?? 0} value={endOdometer} onChange={(e) => setEndOdometer(e.target.value)} /></div><div><Label htmlFor="revenue">Revenue (optional)</Label><Input id="revenue" type="number" min="0" value={revenue} onChange={(e) => setRevenue(e.target.value)} /></div><Button type="submit">Confirm Completion</Button><Button type="button" variant="outline" onClick={() => setCompleting(null)}>Close</Button></form></CardContent></Card>}
+      {completing && <Card><CardHeader><CardTitle>Complete {completing.tripCode}</CardTitle></CardHeader><CardContent>
+        <form className="space-y-4" onSubmit={complete}>
+          <div className="flex flex-wrap items-end gap-4">
+            <div><Label htmlFor="end-odometer">End odometer (start: {completing.startOdometer ?? '—'})</Label><Input id="end-odometer" required type="number" min={completing.startOdometer ?? 0} value={endOdometer} onChange={(e) => setEndOdometer(e.target.value)} /></div>
+            <div><Label htmlFor="revenue">Revenue (optional)</Label><Input id="revenue" type="number" min="0" value={revenue} onChange={(e) => setRevenue(e.target.value)} /></div>
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fuel &amp; expenses (optional — logged against this trip)</p>
+            <div className="flex flex-wrap items-end gap-4">
+              <div><Label htmlFor="c-liters">Fuel litres</Label><Input id="c-liters" type="number" min="0" step="0.01" value={fuelLiters} onChange={(e) => setFuelLiters(e.target.value)} /></div>
+              <div><Label htmlFor="c-fcost">Fuel cost</Label><Input id="c-fcost" type="number" min="0" step="0.01" value={fuelCost} onChange={(e) => setFuelCost(e.target.value)} /></div>
+              <div><Label htmlFor="c-toll">Toll</Label><Input id="c-toll" type="number" min="0" step="0.01" value={expenseToll} onChange={(e) => setExpenseToll(e.target.value)} /></div>
+              <div><Label htmlFor="c-other">Other</Label><Input id="c-other" type="number" min="0" step="0.01" value={expenseOther} onChange={(e) => setExpenseOther(e.target.value)} /></div>
+            </div>
+          </div>
+          <div className="flex gap-2"><Button type="submit">Confirm Completion</Button><Button type="button" variant="outline" onClick={resetComplete}>Close</Button></div>
+        </form>
+      </CardContent></Card>}
       {cancelling && <Card><CardHeader><CardTitle>Cancel {cancelling.tripCode}</CardTitle></CardHeader><CardContent><form className="flex flex-wrap items-end gap-4" onSubmit={cancel}><div className="min-w-72 flex-1"><Label htmlFor="cancel-reason">Cancellation reason</Label><Input id="cancel-reason" required minLength={3} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} /></div><Button type="submit" variant="destructive"><CircleOff className="h-4 w-4" /> Cancel Trip</Button><Button type="button" variant="outline" onClick={() => setCancelling(null)}>Close</Button></form></CardContent></Card>}
     </div>
   );

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
-import type { Expense, ExpenseCategory, FuelLog, FuelSummary, Vehicle } from '@/types';
+import type { Expense, ExpenseCategory, FuelLog, FuelSummary, MaintenanceRecord, Vehicle } from '@/types';
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const EXPENSE_CATEGORIES: ExpenseCategory[] = ['TOLL', 'MISC', 'FUEL', 'MAINTENANCE'];
@@ -39,6 +39,7 @@ export default function Fuel() {
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [summary, setSummary] = useState<FuelSummary | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [maintByVehicle, setMaintByVehicle] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
 
   const [fuelForm, setFuelForm] = useState<FuelForm>(emptyFuel);
@@ -64,6 +65,15 @@ export default function Fuel() {
       .catch((err: ApiError) => setError(err.message));
     // Vehicles power the pickers (Financial Analyst has fleet: view).
     api.get<Vehicle[]>('/vehicles').then(setVehicles).catch(() => setVehicles([]));
+    // Maintenance-linked cost per vehicle, for the expenses "Maint. (Linked)" column.
+    api
+      .get<MaintenanceRecord[]>('/maintenance')
+      .then((recs) => {
+        const map: Record<string, number> = {};
+        for (const r of recs) map[r.vehicleId] = (map[r.vehicleId] ?? 0) + Number(r.cost);
+        setMaintByVehicle(map);
+      })
+      .catch(() => setMaintByVehicle({}));
   }
 
   useEffect(load, []);
@@ -252,17 +262,21 @@ export default function Fuel() {
               <p className="text-sm text-muted-foreground">No expenses recorded yet.</p>
             ) : (
               <Table>
-                <THead><TR><TH>Vehicle</TH><TH>Trip</TH><TH>Toll</TH><TH>Other</TH><TH>Total</TH></TR></THead>
+                <THead><TR><TH>Trip</TH><TH>Vehicle</TH><TH>Toll</TH><TH>Other</TH><TH>Maint. (Linked)</TH><TH>Total</TH></TR></THead>
                 <TBody>
-                  {expenses.map((x) => (
-                    <TR key={x.id}>
-                      <TD className="font-medium">{x.vehicle.name}</TD>
-                      <TD>{x.trip?.tripCode ?? '—'}</TD>
-                      <TD>{formatCurrency(x.toll)}</TD>
-                      <TD>{formatCurrency(x.other)}</TD>
-                      <TD>{formatCurrency(Number(x.toll) + Number(x.other))}</TD>
-                    </TR>
-                  ))}
+                  {expenses.map((x) => {
+                    const maint = maintByVehicle[x.vehicleId] ?? 0;
+                    return (
+                      <TR key={x.id}>
+                        <TD>{x.trip?.tripCode ?? '—'}</TD>
+                        <TD className="font-medium">{x.vehicle.name}</TD>
+                        <TD>{formatCurrency(x.toll)}</TD>
+                        <TD>{formatCurrency(x.other)}</TD>
+                        <TD className="text-muted-foreground">{formatCurrency(maint)}</TD>
+                        <TD className="font-medium">{formatCurrency(Number(x.toll) + Number(x.other) + maint)}</TD>
+                      </TR>
+                    );
+                  })}
                 </TBody>
               </Table>
             )}

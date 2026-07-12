@@ -23,6 +23,7 @@ interface FormState {
   capacityKg: string;
   odometer: string;
   acquisitionCost: string;
+  region: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -32,6 +33,7 @@ const EMPTY_FORM: FormState = {
   capacityKg: '',
   odometer: '0',
   acquisitionCost: '',
+  region: '',
 };
 
 export default function Fleet() {
@@ -93,6 +95,7 @@ export default function Fleet() {
       capacityKg: String(vehicle.capacityKg),
       odometer: String(vehicle.odometer),
       acquisitionCost: String(Number(vehicle.acquisitionCost)),
+      region: vehicle.region ?? '',
     });
     setFormError(null);
     setFieldErrors({});
@@ -118,6 +121,7 @@ export default function Fleet() {
       capacityKg: form.capacityKg,
       odometer: form.odometer,
       acquisitionCost: form.acquisitionCost,
+      ...(form.region.trim() ? { region: form.region.trim() } : {}),
     };
     try {
       if (editingVehicle) {
@@ -266,6 +270,18 @@ export default function Fleet() {
                 {fieldErrors.acquisitionCost && (
                   <p className="text-xs text-destructive">{fieldErrors.acquisitionCost}</p>
                 )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="region">Region</Label>
+                <Input
+                  id="region"
+                  placeholder="e.g. Gandhinagar"
+                  value={form.region}
+                  onChange={(e) => setForm({ ...form, region: e.target.value })}
+                  aria-invalid={!!fieldErrors.region}
+                />
+                {fieldErrors.region && <p className="text-xs text-destructive">{fieldErrors.region}</p>}
               </div>
 
               <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">

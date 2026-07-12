@@ -1,4 +1,4 @@
-import { DriverStatus, Prisma, TripStatus, VehicleStatus } from '@prisma/client';
+import { DriverStatus, ExpenseCategory, Prisma, TripStatus, VehicleStatus } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { ApiError } from '../../utils/ApiError';
 import { isDriverAssignable, startOfToday } from '../drivers/drivers.rules';
@@ -119,6 +119,35 @@ export const tripsService = {
 
       await tx.vehicle.update({ where: { id: trip.vehicleId }, data: { status: VehicleStatus.AVAILABLE, odometer: input.endOdometer } });
       await tx.driver.update({ where: { id: trip.driverId }, data: { status: DriverStatus.AVAILABLE } });
+
+      // On complete: odometer -> fuel log -> expenses (wireframe 4). Both are optional.
+      if (input.fuelLiters !== undefined) {
+        await tx.fuelLog.create({
+          data: {
+            vehicleId: trip.vehicleId,
+            tripId: trip.id,
+            date: new Date(),
+            liters: input.fuelLiters,
+            cost: input.fuelCost ?? 0,
+            odometer: input.endOdometer,
+          },
+        });
+      }
+      const toll = input.expenseToll ?? 0;
+      const other = input.expenseOther ?? 0;
+      if (toll > 0 || other > 0) {
+        await tx.expense.create({
+          data: {
+            vehicleId: trip.vehicleId,
+            tripId: trip.id,
+            category: toll > 0 ? ExpenseCategory.TOLL : ExpenseCategory.MISC,
+            toll,
+            other,
+            note: input.expenseNote,
+          },
+        });
+      }
+
       return tx.trip.update({
         where: { id },
         data: {

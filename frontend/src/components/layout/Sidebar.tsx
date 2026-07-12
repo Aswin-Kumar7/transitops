@@ -4,10 +4,11 @@ import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
 export function Sidebar() {
-  const { canRead } = useAuth();
+  const { canWrite } = useAuth();
 
-  // Show Dashboard (module null) always; other items only if the role can read them.
-  const items = NAV_ITEMS.filter((item) => item.module === null || canRead(item.module));
+  // Show Dashboard (module null) always; other items only if the role can EDIT them
+  // (full access). Read-only (view) access does not surface a nav item.
+  const items = NAV_ITEMS.filter((item) => item.module === null || canWrite(item.module));
 
   return (
     <aside className="flex w-60 flex-col border-r bg-white">

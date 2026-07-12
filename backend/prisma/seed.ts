@@ -31,13 +31,13 @@ async function main() {
 
   // ── Vehicles ─────────────────────────────────────────────────
   const vehicles = [
-    { registrationNo: 'GJ01AB4521', name: 'VAN-05', type: VehicleType.VAN, capacityKg: 500, odometer: 74000, acquisitionCost: 620000, status: VehicleStatus.AVAILABLE },
-    { registrationNo: 'GJ01AB9981', name: 'TRUCK-11', type: VehicleType.TRUCK, capacityKg: 5000, odometer: 182000, acquisitionCost: 2450000, status: VehicleStatus.ON_TRIP },
-    { registrationNo: 'GJ01AB1120', name: 'MINI-03', type: VehicleType.MINI, capacityKg: 1000, odometer: 66000, acquisitionCost: 410000, status: VehicleStatus.IN_SHOP },
-    { registrationNo: 'GJ01AB0087', name: 'VAN-09', type: VehicleType.VAN, capacityKg: 750, odometer: 241900, acquisitionCost: 590000, status: VehicleStatus.RETIRED },
+    { registrationNo: 'GJ01AB4521', name: 'VAN-05', type: VehicleType.VAN, capacityKg: 500, odometer: 74000, acquisitionCost: 620000, status: VehicleStatus.AVAILABLE, region: 'Gandhinagar' },
+    { registrationNo: 'GJ01AB9981', name: 'TRUCK-11', type: VehicleType.TRUCK, capacityKg: 5000, odometer: 182000, acquisitionCost: 2450000, status: VehicleStatus.ON_TRIP, region: 'Ahmedabad' },
+    { registrationNo: 'GJ01AB1120', name: 'MINI-03', type: VehicleType.MINI, capacityKg: 1000, odometer: 66000, acquisitionCost: 410000, status: VehicleStatus.IN_SHOP, region: 'Sanand' },
+    { registrationNo: 'GJ01AB0087', name: 'VAN-09', type: VehicleType.VAN, capacityKg: 750, odometer: 241900, acquisitionCost: 590000, status: VehicleStatus.RETIRED, region: 'Kalol' },
   ];
   for (const v of vehicles) {
-    await prisma.vehicle.upsert({ where: { registrationNo: v.registrationNo }, update: {}, create: v });
+    await prisma.vehicle.upsert({ where: { registrationNo: v.registrationNo }, update: { region: v.region }, create: v });
   }
 
   // ── Drivers ──────────────────────────────────────────────────

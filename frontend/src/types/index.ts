@@ -38,8 +38,15 @@ export interface Vehicle {
   odometer: number;
   acquisitionCost: string; // Prisma Decimal -> JSON string
   status: VehicleStatus;
+  region: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SearchResults {
+  vehicles: { id: string; name: string; registrationNo: string; status: VehicleStatus }[];
+  drivers: { id: string; name: string; licenseNo: string; status: DriverStatus }[];
+  trips: { id: string; tripCode: string; source: string; destination: string; status: TripStatus }[];
 }
 
 export type MaintenanceStatus = 'IN_SHOP' | 'COMPLETED';
