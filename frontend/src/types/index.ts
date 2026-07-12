@@ -56,3 +56,67 @@ export interface MaintenanceRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+// ── Drivers (Member 2) ────────────────────────────────────────────
+
+export type LicenseCategory = 'LMV' | 'HMV';
+export type DriverStatus = 'AVAILABLE' | 'ON_TRIP' | 'OFF_DUTY' | 'SUSPENDED';
+
+export interface Driver {
+  id: string;
+  name: string;
+  licenseNo: string;
+  licenseCategory: LicenseCategory;
+  licenseExpiry: string;
+  contact: string;
+  tripCompletionRate: string | number; // Prisma Decimal -> JSON string
+  status: DriverStatus;
+  // Derived flags — present on GET /drivers, omitted on trip options.
+  assignable?: boolean;
+  licenseExpired?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ── Trips (Member 2) ──────────────────────────────────────────────
+
+export type TripStatus = 'DRAFT' | 'DISPATCHED' | 'COMPLETED' | 'CANCELLED';
+
+// Trimmed shapes returned inside the trip board (see trips boardInclude).
+export interface TripVehicleRef {
+  id: string;
+  name: string;
+  registrationNo: string;
+  capacityKg: number;
+  odometer: number;
+  status: VehicleStatus;
+}
+export interface TripDriverRef {
+  id: string;
+  name: string;
+  licenseNo: string;
+  status: DriverStatus;
+  licenseExpiry: string;
+}
+
+export interface Trip {
+  id: string;
+  tripCode: string;
+  source: string;
+  destination: string;
+  cargoWeightKg: number;
+  plannedDistanceKm: number;
+  status: TripStatus;
+  startOdometer: number | null;
+  endOdometer: number | null;
+  revenue: string | number | null; // Prisma Decimal -> JSON string
+  cancelReason: string | null;
+  vehicle: TripVehicleRef | null;
+  driver: TripDriverRef | null;
+}
+
+// GET /trips/options — full vehicle/driver records for the create-trip form.
+export interface TripOptions {
+  vehicles: Vehicle[];
+  drivers: Driver[];
+}

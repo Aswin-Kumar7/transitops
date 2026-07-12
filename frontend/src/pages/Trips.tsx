@@ -8,16 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/badge';
+import type { Trip, TripOptions, TripStatus } from '@/types';
 
-type TripStatus = 'DRAFT' | 'DISPATCHED' | 'COMPLETED' | 'CANCELLED';
-interface Vehicle { id: string; name: string; registrationNo: string; capacityKg: number; odometer: number; status: string; }
-interface Driver { id: string; name: string; licenseNo: string; status: string; licenseExpiry: string; }
-interface Trip {
-  id: string; tripCode: string; source: string; destination: string; cargoWeightKg: number; plannedDistanceKm: number;
-  status: TripStatus; startOdometer: number | null; endOdometer: number | null; revenue: string | number | null;
-  cancelReason: string | null; vehicle: Vehicle | null; driver: Driver | null;
-}
-interface Options { vehicles: Vehicle[]; drivers: Driver[]; }
 interface TripForm { source: string; destination: string; cargoWeightKg: string; plannedDistanceKm: string; vehicleId: string; driverId: string; }
 
 const emptyForm: TripForm = { source: '', destination: '', cargoWeightKg: '', plannedDistanceKm: '', vehicleId: '', driverId: '' };
@@ -30,7 +22,7 @@ export default function Trips() {
   const { canWrite } = useAuth();
   const writable = canWrite('trips');
   const [trips, setTrips] = useState<Trip[]>([]);
-  const [options, setOptions] = useState<Options>({ vehicles: [], drivers: [] });
+  const [options, setOptions] = useState<TripOptions>({ vehicles: [], drivers: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -46,7 +38,7 @@ export default function Trips() {
   const load = async () => {
     setLoading(true);
     try {
-      const [nextTrips, nextOptions] = await Promise.all([api.get<Trip[]>('/trips'), api.get<Options>('/trips/options')]);
+      const [nextTrips, nextOptions] = await Promise.all([api.get<Trip[]>('/trips'), api.get<TripOptions>('/trips/options')]);
       setTrips(nextTrips); setOptions(nextOptions); setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load trip dispatcher');

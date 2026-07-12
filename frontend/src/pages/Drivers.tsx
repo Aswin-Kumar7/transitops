@@ -9,21 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/badge';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
-
-type DriverStatus = 'AVAILABLE' | 'ON_TRIP' | 'OFF_DUTY' | 'SUSPENDED';
-
-interface Driver {
-  id: string;
-  name: string;
-  licenseNo: string;
-  licenseCategory: 'LMV' | 'HMV';
-  licenseExpiry: string;
-  contact: string;
-  tripCompletionRate: string | number;
-  status: DriverStatus;
-  assignable: boolean;
-  licenseExpired: boolean;
-}
+import type { Driver, DriverStatus } from '@/types';
 
 interface DriverForm {
   name: string;
