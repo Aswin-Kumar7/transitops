@@ -120,3 +120,79 @@ export interface TripOptions {
   vehicles: Vehicle[];
   drivers: Driver[];
 }
+
+// ── Fuel & Expenses (Member 3) ────────────────────────────────────
+
+export type ExpenseCategory = 'TOLL' | 'FUEL' | 'MAINTENANCE' | 'MISC';
+
+export interface FuelLog {
+  id: string;
+  vehicleId: string;
+  vehicle: { name: string; registrationNo: string };
+  tripId: string | null;
+  trip: { tripCode: string } | null;
+  date: string;
+  liters: string; // Prisma Decimal -> JSON string
+  cost: string;
+  odometer: number | null;
+  createdAt: string;
+}
+
+export interface Expense {
+  id: string;
+  vehicleId: string;
+  vehicle: { name: string; registrationNo: string };
+  tripId: string | null;
+  trip: { tripCode: string } | null;
+  category: ExpenseCategory;
+  toll: string; // Prisma Decimal -> JSON string
+  other: string;
+  note: string | null;
+  date: string;
+  createdAt: string;
+}
+
+export interface FuelSummary {
+  fuelCost: number;
+  maintenanceCost: number;
+  tollTotal: number;
+  otherTotal: number;
+  litresTotal: number;
+  totalOperationalCost: number; // fuel + maintenance
+}
+
+// ── Analytics (Member 3) ──────────────────────────────────────────
+
+export interface AnalyticsOverview {
+  fuelEfficiency: number; // km/l
+  fleetUtilization: number; // %
+  operationalCost: number;
+  vehicleRoi: number; // %
+  monthlyRevenue: { month: string; revenue: number }[];
+  topCostliestVehicles: { name: string; cost: number }[];
+  perVehicle: {
+    id: string;
+    name: string;
+    registrationNo: string;
+    fuelCost: number;
+    maintenanceCost: number;
+    cost: number;
+    revenue: number;
+    roi: number;
+  }[];
+}
+
+// ── Settings (Member 3) ───────────────────────────────────────────
+
+export interface Setting {
+  id: number;
+  depotName: string;
+  currency: string;
+  distanceUnit: string;
+  updatedAt: string;
+}
+
+export interface SettingsResponse {
+  general: Setting;
+  rbac: Record<Role, Permissions>;
+}

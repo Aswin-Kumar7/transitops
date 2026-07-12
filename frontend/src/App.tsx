@@ -8,12 +8,9 @@ import Fleet from '@/pages/Fleet';
 import Maintenance from '@/pages/Maintenance';
 import DriversPage from '@/pages/Drivers';
 import TripsPage from '@/pages/Trips';
-import { Placeholder } from '@/pages/Placeholder';
-
-// Remaining member-owned screens are placeholders until built.
-const Fuel = () => <Placeholder title="Fuel & Expenses" owner="Member 3 — Finance" brief="Fuel logs, expenses, total operational cost. GET /api/fuel/* is wired." />;
-const Analytics = () => <Placeholder title="Reports & Analytics" owner="Member 3 — Finance" brief="Efficiency, utilization, ROI, revenue. GET /api/analytics/overview is wired." />;
-const Settings = () => <Placeholder title="Settings & RBAC" owner="Member 3 — Finance" brief="Depot settings + RBAC matrix. GET /api/settings is wired." />;
+import Fuel from '@/pages/Fuel';
+import Analytics from '@/pages/Analytics';
+import Settings from '@/pages/Settings';
 
 export default function App() {
   return (
