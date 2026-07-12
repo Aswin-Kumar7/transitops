@@ -1,24 +1,30 @@
 import { Router } from 'express';
-import { prisma } from '../../config/prisma';
 import { authenticate } from '../../middleware/auth';
 import { requireModule } from '../../middleware/rbac';
+import { validate } from '../../middleware/validate';
 import { asyncHandler } from '../../utils/asyncHandler';
+import { vehiclesController } from './vehicles.controller';
+import {
+  createVehicleSchema,
+  listVehiclesQuerySchema,
+  updateVehicleSchema,
+  updateVehicleStatusSchema,
+} from './vehicles.validation';
 
 /**
  * FLEET — Vehicle Registry (Member 1). Screen 2.
- * Base provides a guarded read so the app runs end-to-end.
- * TODO(Member 1): add create/update/retire, unique-reg validation, filters.
  * See docs/prompts/MEMBER-1-FLEET.md.
  */
 const router = Router();
 router.use(authenticate, requireModule('fleet'));
 
-router.get(
-  '/',
-  asyncHandler(async (_req, res) => {
-    const vehicles = await prisma.vehicle.findMany({ orderBy: { createdAt: 'desc' } });
-    res.json(vehicles);
-  }),
+router.get('/', validate(listVehiclesQuerySchema), asyncHandler(vehiclesController.list));
+router.post('/', validate(createVehicleSchema), asyncHandler(vehiclesController.create));
+router.put('/:id', validate(updateVehicleSchema), asyncHandler(vehiclesController.update));
+router.patch(
+  '/:id/status',
+  validate(updateVehicleStatusSchema),
+  asyncHandler(vehiclesController.updateStatus),
 );
 
 export default router;

@@ -4,11 +4,11 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
+import Fleet from '@/pages/Fleet';
+import Maintenance from '@/pages/Maintenance';
 import { Placeholder } from '@/pages/Placeholder';
 
 // Member-owned screens start as placeholders. Replace each with the real page.
-const Fleet = () => <Placeholder title="Vehicle Registry" owner="Member 1 — Fleet" brief="CRUD vehicles, unique registration no, status lifecycle. GET /api/vehicles is wired." />;
-const Maintenance = () => <Placeholder title="Maintenance" owner="Member 1 — Fleet" brief="Log/close service records; Available ↔ In Shop. GET /api/maintenance is wired." />;
 const Drivers = () => <Placeholder title="Drivers & Safety" owner="Member 2 — Operations" brief="Driver profiles, status toggle, license/suspension rules. GET /api/drivers is wired." />;
 const Trips = () => <Placeholder title="Trip Dispatcher" owner="Member 2 — Operations" brief="Trip lifecycle, capacity + eligibility checks, live board. GET /api/trips is wired." />;
 const Fuel = () => <Placeholder title="Fuel & Expenses" owner="Member 3 — Finance" brief="Fuel logs, expenses, total operational cost. GET /api/fuel/* is wired." />;

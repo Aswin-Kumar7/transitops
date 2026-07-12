@@ -1,27 +1,24 @@
 import { Router } from 'express';
-import { prisma } from '../../config/prisma';
 import { authenticate } from '../../middleware/auth';
 import { requireModule } from '../../middleware/rbac';
+import { validate } from '../../middleware/validate';
 import { asyncHandler } from '../../utils/asyncHandler';
+import { maintenanceController } from './maintenance.controller';
+import { closeMaintenanceSchema, createMaintenanceSchema } from './maintenance.validation';
 
 /**
  * MAINTENANCE (Member 1). Screen 5. Guarded under the 'fleet' module.
- * TODO(Member 1): logService (Vehicle AVAILABLE -> IN_SHOP, create record),
- * closeService (IN_SHOP -> AVAILABLE). In-Shop vehicles must leave the dispatch pool.
  * See docs/prompts/MEMBER-1-FLEET.md.
  */
 const router = Router();
 router.use(authenticate, requireModule('fleet'));
 
-router.get(
-  '/',
-  asyncHandler(async (_req, res) => {
-    const records = await prisma.maintenanceRecord.findMany({
-      orderBy: { serviceDate: 'desc' },
-      include: { vehicle: { select: { name: true, registrationNo: true } } },
-    });
-    res.json(records);
-  }),
+router.get('/', asyncHandler(maintenanceController.list));
+router.post('/', validate(createMaintenanceSchema), asyncHandler(maintenanceController.logService));
+router.patch(
+  '/:id/close',
+  validate(closeMaintenanceSchema),
+  asyncHandler(maintenanceController.closeService),
 );
 
 export default router;
