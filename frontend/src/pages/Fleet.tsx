@@ -1,20 +1,20 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { formatCurrency, cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
+import { formatCurrency } from '@/lib/utils';
 import { StatusBadge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import type { Vehicle, VehicleStatus, VehicleType } from '@/types';
+import { DeliveryTruck01Icon, Search01Icon } from 'hugeicons-react';
+import { Dropdown } from '@/components/ui/dropdown';
 
 const VEHICLE_TYPES: VehicleType[] = ['VAN', 'TRUCK', 'MINI'];
 const VEHICLE_STATUSES: VehicleStatus[] = ['AVAILABLE', 'ON_TRIP', 'IN_SHOP', 'RETIRED'];
 
-const selectClass =
-  'flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const cardStyles = 'bg-white rounded-[32px] shadow-sm flex flex-col min-h-0 border-none p-6';
+const inputStyles = 'w-full rounded-2xl bg-gray-50 border-none px-4 py-3 text-sm font-medium text-black outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B5E47]/20 transition-all';
+const pill = 'relative flex items-center gap-2 rounded-2xl border-none bg-white shadow-sm py-2.5 pl-4 pr-3 text-sm font-medium transition-shadow hover:shadow-md';
+const primaryBtn = 'rounded-2xl bg-[#1B5E47] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#154a38] transition-colors disabled:opacity-70 disabled:cursor-not-allowed';
+const outlineBtn = 'rounded-2xl bg-white px-6 py-2.5 text-sm font-semibold text-gray-500 shadow-sm border border-gray-100 hover:text-black hover:bg-gray-50 transition-colors disabled:opacity-70 disabled:cursor-not-allowed';
 
 interface FormState {
   registrationNo: string;
@@ -23,6 +23,7 @@ interface FormState {
   capacityKg: string;
   odometer: string;
   acquisitionCost: string;
+  region: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -32,6 +33,7 @@ const EMPTY_FORM: FormState = {
   capacityKg: '',
   odometer: '0',
   acquisitionCost: '',
+  region: '',
 };
 
 export default function Fleet() {
@@ -93,6 +95,7 @@ export default function Fleet() {
       capacityKg: String(vehicle.capacityKg),
       odometer: String(vehicle.odometer),
       acquisitionCost: String(Number(vehicle.acquisitionCost)),
+      region: vehicle.region ?? '',
     });
     setFormError(null);
     setFieldErrors({});
@@ -118,6 +121,7 @@ export default function Fleet() {
       capacityKg: form.capacityKg,
       odometer: form.odometer,
       acquisitionCost: form.acquisitionCost,
+      ...(form.region.trim() ? { region: form.region.trim() } : {}),
     };
     try {
       if (editingVehicle) {
@@ -159,254 +163,240 @@ export default function Fleet() {
       : 'No vehicles yet. Add your first vehicle to get started.';
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Vehicle Registry</h1>
+    <div className="font-poppins h-full flex flex-col gap-6 overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-4 shrink-0">
+        <h1 className="text-2xl font-semibold tracking-tight text-black flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-[#1B5E47] bg-white shadow-sm">
+            <DeliveryTruck01Icon size={22} strokeWidth={2.5} />
+          </div>
+          Vehicle Registry
+        </h1>
         {canEdit && (
-          <Button onClick={formOpen ? closeForm : openAddForm}>
+          <button className={formOpen ? outlineBtn : primaryBtn} onClick={formOpen ? closeForm : openAddForm}>
             {formOpen ? 'Cancel' : '+ Add Vehicle'}
-          </Button>
+          </button>
         )}
       </div>
 
       {canEdit && formOpen && (
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}
+        <div className={`${cardStyles} shrink-0 bg-[#E5F5EF] p-8`}>
+            <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-[#1B5E47]">
+              {editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
             </h2>
             {formError && (
-              <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <div className="mb-6 rounded-2xl border-none bg-white px-4 py-3 text-sm font-semibold text-red-600 shadow-sm">
                 {formError}
               </div>
             )}
-            <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" noValidate>
-              <div className="space-y-1.5">
-                <Label htmlFor="registrationNo">Registration No.</Label>
-                <Input
+            <form onSubmit={handleSubmit} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" noValidate>
+              <div className="space-y-2">
+                <label htmlFor="registrationNo" className="text-xs font-semibold text-gray-600">Registration No.</label>
+                <input
                   id="registrationNo"
+                  className={inputStyles}
                   value={form.registrationNo}
                   onChange={(e) => setForm({ ...form, registrationNo: e.target.value })}
-                  aria-invalid={!!fieldErrors.registrationNo}
                   placeholder="GJ01AB4521"
                 />
                 {fieldErrors.registrationNo && (
-                  <p className="text-xs text-destructive">{fieldErrors.registrationNo}</p>
+                  <p className="text-xs font-medium text-red-500">{fieldErrors.registrationNo}</p>
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Name / Model</Label>
-                <Input
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-xs font-semibold text-gray-600">Name / Model</label>
+                <input
                   id="name"
+                  className={inputStyles}
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  aria-invalid={!!fieldErrors.name}
                   placeholder="VAN-05"
                 />
-                {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
+                {fieldErrors.name && <p className="text-xs font-medium text-red-500">{fieldErrors.name}</p>}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="type">Type</Label>
-                <select
-                  id="type"
-                  className={selectClass}
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value as VehicleType })}
-                >
-                  {VEHICLE_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.type && <p className="text-xs text-destructive">{fieldErrors.type}</p>}
+              <div className="space-y-2 relative">
+                <label htmlFor="type" className="text-xs font-semibold text-gray-600">Type</label>
+                <Dropdown 
+                  value={form.type} 
+                  onChange={(val) => setForm({ ...form, type: val as VehicleType })} 
+                  options={VEHICLE_TYPES.map(t => ({ label: t, value: t }))} 
+                  className="flex h-11 w-full rounded-2xl border-none bg-gray-50 px-4 text-sm font-medium text-black outline-none focus:ring-2 focus:ring-[#1B5E47]/20 transition-all"
+                />
+                {fieldErrors.type && <p className="text-xs font-medium text-red-500">{fieldErrors.type}</p>}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="capacityKg">Capacity (kg)</Label>
-                <Input
+              <div className="space-y-2">
+                <label htmlFor="capacityKg" className="text-xs font-semibold text-gray-600">Capacity (kg)</label>
+                <input
                   id="capacityKg"
                   type="number"
-                  min={1}
+                  className={inputStyles}
                   value={form.capacityKg}
                   onChange={(e) => setForm({ ...form, capacityKg: e.target.value })}
-                  aria-invalid={!!fieldErrors.capacityKg}
                 />
                 {fieldErrors.capacityKg && (
-                  <p className="text-xs text-destructive">{fieldErrors.capacityKg}</p>
+                  <p className="text-xs font-medium text-red-500">{fieldErrors.capacityKg}</p>
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="odometer">Odometer (km)</Label>
-                <Input
+              <div className="space-y-2">
+                <label htmlFor="odometer" className="text-xs font-semibold text-gray-600">Odometer (km)</label>
+                <input
                   id="odometer"
                   type="number"
-                  min={0}
+                  className={inputStyles}
                   value={form.odometer}
                   onChange={(e) => setForm({ ...form, odometer: e.target.value })}
-                  aria-invalid={!!fieldErrors.odometer}
                 />
-                {fieldErrors.odometer && <p className="text-xs text-destructive">{fieldErrors.odometer}</p>}
+                {fieldErrors.odometer && <p className="text-xs font-medium text-red-500">{fieldErrors.odometer}</p>}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="acquisitionCost">Acquisition Cost</Label>
-                <Input
+              <div className="space-y-2">
+                <label htmlFor="acquisitionCost" className="text-xs font-semibold text-gray-600">Acquisition Cost</label>
+                <input
                   id="acquisitionCost"
                   type="number"
-                  min={0}
                   step="0.01"
+                  className={inputStyles}
                   value={form.acquisitionCost}
                   onChange={(e) => setForm({ ...form, acquisitionCost: e.target.value })}
-                  aria-invalid={!!fieldErrors.acquisitionCost}
                 />
                 {fieldErrors.acquisitionCost && (
-                  <p className="text-xs text-destructive">{fieldErrors.acquisitionCost}</p>
+                  <p className="text-xs font-medium text-red-500">{fieldErrors.acquisitionCost}</p>
                 )}
               </div>
 
-              <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-                <Button type="submit" disabled={submitting}>
+              <div className="space-y-2">
+                <label htmlFor="region" className="text-xs font-semibold text-gray-600">Region</label>
+                <input
+                  id="region"
+                  className={inputStyles}
+                  placeholder="e.g. Gandhinagar"
+                  value={form.region}
+                  onChange={(e) => setForm({ ...form, region: e.target.value })}
+                />
+                {fieldErrors.region && <p className="text-xs font-medium text-red-500">{fieldErrors.region}</p>}
+              </div>
+
+              <div className="flex items-end gap-3 sm:col-span-2 lg:col-span-3 mt-4">
+                <button type="submit" className={primaryBtn} disabled={submitting}>
                   {submitting ? 'Saving…' : editingVehicle ? 'Save Changes' : 'Add Vehicle'}
-                </Button>
-                <Button type="button" variant="outline" onClick={closeForm} disabled={submitting}>
+                </button>
+                <button type="button" className={outlineBtn} onClick={closeForm} disabled={submitting}>
                   Cancel
-                </Button>
+                </button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+        </div>
       )}
 
-      <Card>
-        <CardContent className="space-y-4 p-6">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="filterType">Type</Label>
-              <select
-                id="filterType"
-                className={cn(selectClass, 'w-40')}
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="">All Types</option>
-                {VEHICLE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
+      <div className={`${cardStyles} flex-1 overflow-hidden`}>
+          {/* Filters Row */}
+          <div className="flex flex-wrap items-center gap-3 mb-6 shrink-0">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-black bg-gray-50 shadow-sm border border-gray-100">
+              <Search01Icon size={18} strokeWidth={2.5} />
             </div>
+            <label className={pill}>
+              <span className="text-gray-400 font-normal">Type</span>
+              <Dropdown 
+                value={typeFilter} 
+                onChange={setTypeFilter} 
+                options={[{label: 'All', value: ''}, ...VEHICLE_TYPES.map(t => ({ label: t, value: t }))]} 
+                className="w-24 font-semibold text-black bg-transparent" 
+              />
+            </label>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="filterStatus">Status</Label>
-              <select
-                id="filterStatus"
-                className={cn(selectClass, 'w-40')}
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">All Statuses</option>
-                {VEHICLE_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s.replace('_', ' ')}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <label className={pill}>
+              <span className="text-gray-400 font-normal">Status</span>
+              <Dropdown 
+                value={statusFilter} 
+                onChange={setStatusFilter} 
+                options={[{label: 'All', value: ''}, ...VEHICLE_STATUSES.map(s => ({ label: s.replace('_', ' '), value: s }))]} 
+                className="w-32 font-semibold text-black bg-transparent" 
+              />
+            </label>
 
-            <div className="min-w-[220px] flex-1 space-y-1.5">
-              <Label htmlFor="search">Search Reg. No.</Label>
-              <Input
-                id="search"
+            <div className="min-w-[220px] flex-1 relative">
+              <input
                 placeholder="Search by registration number…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-2xl bg-white border-none px-4 py-2.5 text-sm font-medium text-black shadow-sm outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B5E47]/20 transition-all"
               />
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            Registration No. must be unique · Retired/In-Shop vehicles are hidden from Trip Dispatcher.
+          <p className="text-xs font-medium text-gray-400 mb-6 shrink-0 uppercase tracking-wider">
+            Registration No. must be unique · Retired/In-Shop hidden from Dispatch
           </p>
 
           {rowError && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="mb-6 rounded-2xl border-none bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 shadow-sm shrink-0">
               {rowError}
             </div>
           )}
 
-          {loading && <p className="text-sm text-muted-foreground">Loading vehicles…</p>}
-          {!loading && error && <p className="text-sm text-destructive">{error}</p>}
+          {loading && <p className="text-sm font-normal text-gray-500">Loading vehicles…</p>}
+          {!loading && error && <p className="text-sm font-semibold text-red-500">{error}</p>}
           {!loading && !error && vehicles && vehicles.length === 0 && (
-            <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+            <p className="text-sm font-normal text-gray-500 py-8 text-center">{emptyMessage}</p>
           )}
 
+          {/* Data Table */}
           {!loading && !error && vehicles && vehicles.length > 0 && (
-            <Table>
-              <THead>
-                <TR>
-                  <TH>Reg No</TH>
-                  <TH>Name / Model</TH>
-                  <TH>Type</TH>
-                  <TH>Capacity</TH>
-                  <TH>Odometer</TH>
-                  <TH>Acq. Cost</TH>
-                  <TH>Status</TH>
-                  {canEdit && <TH>Actions</TH>}
-                </TR>
-              </THead>
-              <TBody>
-                {vehicles.map((v) => {
-                  const statusActionable = v.status === 'AVAILABLE' || v.status === 'RETIRED';
-                  return (
-                    <TR key={v.id}>
-                      <TD className="font-medium">{v.registrationNo}</TD>
-                      <TD>{v.name}</TD>
-                      <TD>{v.type}</TD>
-                      <TD>{v.capacityKg.toLocaleString()} kg</TD>
-                      <TD>{v.odometer.toLocaleString()} km</TD>
-                      <TD>{formatCurrency(v.acquisitionCost)}</TD>
-                      <TD>
-                        <StatusBadge status={v.status} />
-                      </TD>
-                      {canEdit && (
-                        <TD>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => openEditForm(v)}>
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={!statusActionable || statusActionId === v.id}
-                              onClick={() => toggleRetire(v)}
-                              title={
-                                statusActionable
-                                  ? undefined
-                                  : 'Status is managed by Trips/Maintenance while ON_TRIP/IN_SHOP'
-                              }
-                            >
-                              {statusActionId === v.id
-                                ? 'Saving…'
-                                : v.status === 'RETIRED'
-                                  ? 'Activate'
-                                  : 'Retire'}
-                            </Button>
-                          </div>
-                        </TD>
-                      )}
-                    </TR>
-                  );
-                })}
-              </TBody>
-            </Table>
+             <div className="flex-1 overflow-auto px-2 -mx-2">
+               <table className="w-full text-left">
+                 <thead className="sticky top-0 bg-white z-10">
+                   <tr>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-50">Reg No</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-50">Name / Model</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-50">Type</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-50">Capacity</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-50">Odometer</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-50">Acq. Cost</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-50">Status</th>
+                     {canEdit && <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-50 text-right">Actions</th>}
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-gray-50">
+                    {vehicles.map((v) => {
+                      const statusActionable = v.status === 'AVAILABLE' || v.status === 'RETIRED';
+                      return (
+                        <tr key={v.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-5 py-3.5 text-sm font-semibold text-black">{v.registrationNo}</td>
+                          <td className="px-5 py-3.5 text-sm font-medium text-gray-600">{v.name}</td>
+                          <td className="px-5 py-3.5 text-sm font-medium text-gray-600">{v.type}</td>
+                          <td className="px-5 py-3.5 text-sm font-medium text-gray-600">{v.capacityKg.toLocaleString()} kg</td>
+                          <td className="px-5 py-3.5 text-sm font-medium text-gray-600">{v.odometer.toLocaleString()} km</td>
+                          <td className="px-5 py-3.5 text-sm font-medium text-gray-600">{formatCurrency(v.acquisitionCost)}</td>
+                          <td className="px-5 py-3.5">
+                            <StatusBadge status={v.status} />
+                          </td>
+                          {canEdit && (
+                            <td className="px-5 py-3.5 text-right">
+                              <div className="flex justify-end gap-2">
+                                <button className="px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 bg-white shadow-sm border border-gray-100 hover:text-black hover:bg-gray-50 transition-colors" onClick={() => openEditForm(v)}>
+                                  Edit
+                                </button>
+                                <button
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 bg-white shadow-sm border border-gray-100 hover:text-black hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                  disabled={!statusActionable || statusActionId === v.id}
+                                  onClick={() => toggleRetire(v)}
+                                >
+                                  {statusActionId === v.id ? 'Saving…' : v.status === 'RETIRED' ? 'Activate' : 'Retire'}
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                 </tbody>
+               </table>
+             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

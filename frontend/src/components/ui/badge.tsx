@@ -1,18 +1,18 @@
 import { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-// Maps every domain status to a consistent colour (matches the wireframe badges).
+// Maps every domain status to a consistent soft colour matching the new theme
 const STATUS_STYLES: Record<string, string> = {
-  AVAILABLE: 'bg-status-available text-white',
-  ON_TRIP: 'bg-status-ontrip text-white',
-  DISPATCHED: 'bg-status-ontrip text-white',
-  IN_SHOP: 'bg-status-inshop text-white',
-  RETIRED: 'bg-status-retired text-white',
-  SUSPENDED: 'bg-status-retired text-white',
-  OFF_DUTY: 'bg-status-draft text-white',
-  DRAFT: 'bg-status-draft text-white',
-  COMPLETED: 'bg-status-available text-white',
-  CANCELLED: 'bg-status-retired text-white',
+  AVAILABLE: 'bg-[#E5F5EF] text-[#1B5E47]',
+  ON_TRIP: 'bg-black text-white',
+  DISPATCHED: 'bg-black text-white',
+  IN_SHOP: 'bg-orange-100 text-orange-800',
+  RETIRED: 'bg-red-100 text-red-800',
+  SUSPENDED: 'bg-red-100 text-red-800',
+  OFF_DUTY: 'bg-gray-100 text-gray-800',
+  DRAFT: 'bg-gray-100 text-gray-800',
+  COMPLETED: 'bg-[#E5F5EF] text-[#1B5E47]',
+  CANCELLED: 'bg-red-100 text-red-800',
 };
 
 const humanize = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -21,8 +21,8 @@ export function StatusBadge({ status, className }: { status: string; className?:
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold',
-        STATUS_STYLES[status] ?? 'bg-muted text-muted-foreground',
+        'inline-flex items-center rounded-lg px-3 py-1 text-[10px] uppercase font-semibold tracking-wider',
+        STATUS_STYLES[status] ?? 'bg-gray-100 text-gray-800',
         className,
       )}
     >
@@ -34,7 +34,7 @@ export function StatusBadge({ status, className }: { status: string; className?:
 export function Badge({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
-      className={cn('inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold', className)}
+      className={cn('inline-flex items-center rounded-lg bg-gray-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider', className)}
       {...props}
     />
   );

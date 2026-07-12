@@ -33,4 +33,8 @@
     @apply bg-background text-foreground antialiased;
     font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   }
+  select option {
+    background-color: white;
+    color: black;
+  }
 }

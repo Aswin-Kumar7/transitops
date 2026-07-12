@@ -23,6 +23,13 @@ export const completeTripSchema = z.object({
   body: z.object({
     endOdometer: z.coerce.number().int().nonnegative('End odometer cannot be negative'),
     revenue: z.coerce.number().nonnegative('Revenue cannot be negative').optional(),
+    // Optional fuel log captured at completion (odometer -> fuel log).
+    fuelLiters: z.coerce.number().positive('Litres must be greater than 0').optional(),
+    fuelCost: z.coerce.number().nonnegative('Fuel cost cannot be negative').optional(),
+    // Optional trip expense captured at completion (-> expenses).
+    expenseToll: z.coerce.number().nonnegative('Toll cannot be negative').optional(),
+    expenseOther: z.coerce.number().nonnegative('Other cannot be negative').optional(),
+    expenseNote: z.string().trim().max(500, 'Note is too long').optional(),
   }),
 });
 

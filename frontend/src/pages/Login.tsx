@@ -1,11 +1,10 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DashboardCircleIcon } from 'hugeicons-react';
+import { Dropdown } from '@/components/ui/dropdown';
 import { useAuth } from '@/context/AuthContext';
 import { ApiError } from '@/lib/api';
 import { ROLE_LABELS, type Role } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 const ROLE_SCOPE: { role: Role; scope: string }[] = [
   { role: 'FLEET_MANAGER', scope: 'Fleet, Maintenance' },
@@ -45,101 +44,101 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[#F1F3F6] font-poppins text-[#111]">
       {/* Left brand panel */}
-      <div className="hidden w-2/5 flex-col justify-between bg-slate-900 p-12 text-white lg:flex">
-        <div>
-          <div className="mb-4 h-14 w-14 rounded bg-primary" />
-          <h1 className="text-3xl font-bold">TransitOps</h1>
-          <p className="mt-1 text-slate-400">Smart Transport Operations Platform</p>
+      <div className="hidden w-2/5 flex-col justify-between bg-[#1B5E47] p-12 text-white lg:flex relative overflow-hidden rounded-r-[48px] shadow-2xl z-10">
+        <div className="absolute -right-32 -top-32 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl"></div>
+        <div className="relative z-10">
+          <div className="mb-6 h-16 w-16 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
+            <DashboardCircleIcon size={32} className="text-white" />
+          </div>
+          <h1 className="text-4xl font-semibold tracking-tight">TransitOps</h1>
+          <p className="mt-2 text-white/70 font-normal">Smart Transport Operations Platform</p>
         </div>
-        <div>
-          <p className="mb-4 font-medium">One login, four roles:</p>
-          <ul className="space-y-2 text-slate-300">
+        <div className="relative z-10">
+          <p className="mb-4 font-medium opacity-90">One login, four roles:</p>
+          <ul className="space-y-3 text-white/80 font-normal text-sm">
             {ROLE_SCOPE.map(({ role: r }) => (
-              <li key={r} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <li key={r} className="flex items-center gap-3">
+                <span className="h-2 w-2 rounded-full bg-[#10B981]" />
                 {ROLE_LABELS[r]}
               </li>
             ))}
           </ul>
         </div>
-        <p className="text-xs uppercase tracking-widest text-slate-500">TransitOps © 2026 · RBAC enabled</p>
+        <p className="text-xs font-medium uppercase tracking-widest text-white/50 relative z-10">TransitOps © 2026 · RBAC enabled</p>
       </div>
 
       {/* Right form panel */}
       <div className="flex flex-1 items-center justify-center p-8">
-        <form onSubmit={handleSubmit} className="w-full max-w-md space-y-5" noValidate>
-          <div>
-            <h2 className="text-2xl font-semibold">Sign in to your account</h2>
-            <p className="text-sm text-muted-foreground">Enter your credentials to continue</p>
-          </div>
-
-          {error && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              ✕ {error}
+        <div className="w-full max-w-md bg-white rounded-[32px] shadow-sm p-8">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            <div>
+              <h2 className="text-2xl font-semibold text-black">Sign In</h2>
+              <p className="text-sm font-normal text-gray-400 mt-1">Enter your credentials to continue</p>
             </div>
-          )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@transitops.in"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-invalid={!!fieldErrors.email}
-            />
-            {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
-          </div>
+            {error && (
+              <div className="rounded-2xl border-none bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                {error}
+              </div>
+            )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-invalid={!!fieldErrors.password}
-            />
-            {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
-          </div>
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-semibold text-gray-700">Email</label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@transitops.in"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-2xl bg-gray-50 border-none px-4 py-3 text-sm font-medium text-black outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B5E47]/20 transition-all"
+              />
+              {fieldErrors.email && <p className="text-xs font-medium text-red-500">{fieldErrors.email}</p>}
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="role">Role (RBAC)</Label>
-            <select
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {ROLE_SCOPE.map(({ role: r }) => (
-                <option key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-semibold text-gray-700">Password</label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-2xl bg-gray-50 border-none px-4 py-3 text-sm font-medium text-black outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B5E47]/20 transition-all"
+              />
+              {fieldErrors.password && <p className="text-xs font-medium text-red-500">{fieldErrors.password}</p>}
+            </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-            {submitting ? 'Signing in…' : 'Sign In'}
-          </Button>
+            <div className="space-y-2">
+              <label htmlFor="role" className="text-sm font-semibold text-gray-700">Role (RBAC)</label>
+              <Dropdown 
+                value={role} 
+                onChange={(val) => setRole(val as Role)} 
+                options={ROLE_SCOPE.map(({ role: r }) => ({ label: ROLE_LABELS[r], value: r }))} 
+                className="flex h-[46px] w-full rounded-2xl bg-gray-50 border-none px-4 text-sm font-semibold text-black outline-none focus:ring-2 focus:ring-[#1B5E47]/20 transition-all"
+              />
+            </div>
 
-          <div className="border-t pt-4 text-xs text-muted-foreground">
-            <p className="mb-2">Access is scoped by role after login:</p>
-            <ul className="space-y-1">
-              {ROLE_SCOPE.map(({ role: r, scope }) => (
-                <li key={r}>
-                  • {ROLE_LABELS[r]} → {scope}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </form>
+            <button type="submit" disabled={submitting} className="w-full rounded-2xl bg-[#1B5E47] py-3 text-sm font-semibold text-white shadow-md hover:bg-[#154a38] transition-colors disabled:opacity-70 disabled:cursor-not-allowed">
+              {submitting ? 'Signing in…' : 'Sign In'}
+            </button>
+
+            <div className="border-t border-gray-100 pt-6 text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+              <p className="mb-3 text-gray-500">Access is scoped by role after login:</p>
+              <ul className="space-y-2">
+                {ROLE_SCOPE.map(({ role: r, scope }) => (
+                  <li key={r} className="flex justify-between">
+                    <span className="text-black">{ROLE_LABELS[r]}</span>
+                    <span>{scope}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export const TR = ({ className, ...props }: HTMLAttributes<HTMLTableRowElement>)
 export const TH = ({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) => (
   <th
     className={cn(
-      'h-11 px-4 text-left align-middle text-xs font-medium uppercase tracking-wide text-muted-foreground',
+      'h-11 px-4 text-left align-middle text-xs font-normal uppercase tracking-wide text-muted-foreground',
       className,
     )}
     {...props}

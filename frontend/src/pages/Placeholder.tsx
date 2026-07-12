@@ -7,11 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 export function Placeholder({ title, owner, brief }: { title: string; owner: string; brief: string }) {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{title}</h1>
+      <h1 className="text-2xl font-medium">{title}</h1>
       <Card>
         <CardContent className="space-y-2 p-6">
           <p className="text-sm">
-            <span className="font-medium">Owner:</span> {owner}
+            <span className="font-normal">Owner:</span> {owner}
           </p>
           <p className="text-sm text-muted-foreground">{brief}</p>
           <p className="text-xs text-muted-foreground">

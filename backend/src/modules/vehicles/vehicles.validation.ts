@@ -20,6 +20,7 @@ export const createVehicleSchema = z.object({
     capacityKg: z.coerce.number().int().positive('Capacity must be greater than 0'),
     odometer: z.coerce.number().int().nonnegative('Odometer cannot be negative').default(0),
     acquisitionCost: z.coerce.number().nonnegative('Cost cannot be negative'),
+    region: z.string().trim().max(60, 'Region is too long').optional(),
   }),
 });
 
@@ -31,6 +32,7 @@ export const updateVehicleSchema = z.object({
     capacityKg: z.coerce.number().int().positive('Capacity must be greater than 0'),
     odometer: z.coerce.number().int().nonnegative('Odometer cannot be negative'),
     acquisitionCost: z.coerce.number().nonnegative('Cost cannot be negative'),
+    region: z.string().trim().max(60, 'Region is too long').optional(),
   }),
   params: z.object({
     id: z.string().min(1),

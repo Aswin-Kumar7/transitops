@@ -2,292 +2,155 @@ import { FormEvent, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { formatCurrency } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
 import { StatusBadge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import type { MaintenanceRecord, Vehicle } from '@/types';
+import { Wrench01Icon } from 'hugeicons-react';
+import { Dropdown } from '@/components/ui/dropdown';
 
-const selectClass =
-  'flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const cardStyles = 'bg-white rounded-[32px] shadow-sm flex flex-col min-h-0 border-none p-6 lg:p-8';
+const inputStyles = 'w-full rounded-2xl bg-gray-50 border-none px-4 py-3 text-sm font-medium text-black outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B5E47]/20 transition-all';
+const primaryBtn = 'rounded-2xl bg-[#1B5E47] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#154a38] transition-colors disabled:opacity-70 disabled:cursor-not-allowed';
+const outlineBtn = 'rounded-2xl bg-white px-6 py-2.5 text-sm font-semibold text-gray-500 shadow-sm border border-gray-100 hover:text-black hover:bg-gray-50 transition-colors disabled:opacity-70 disabled:cursor-not-allowed';
 
-interface FormState {
-  vehicleId: string;
-  serviceType: string;
-  cost: string;
-  serviceDate: string;
-  notes: string;
-}
-
+interface FormState { vehicleId: string; serviceType: string; cost: string; serviceDate: string; notes: string; }
 const todayIso = () => new Date().toISOString().slice(0, 10);
-
-const EMPTY_FORM: FormState = {
-  vehicleId: '',
-  serviceType: '',
-  cost: '',
-  serviceDate: todayIso(),
-  notes: '',
-};
+const EMPTY_FORM: FormState = { vehicleId: '', serviceType: '', cost: '', serviceDate: todayIso(), notes: '' };
 
 export default function Maintenance() {
   const { canWrite } = useAuth();
   const canEdit = canWrite('fleet');
-
   const [records, setRecords] = useState<MaintenanceRecord[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-
   const [closingId, setClosingId] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
 
   function fetchRecords() {
-    setLoading(true);
-    setError(null);
-    api
-      .get<MaintenanceRecord[]>('/maintenance')
-      .then(setRecords)
-      .catch((e: ApiError) => setError(e.message))
-      .finally(() => setLoading(false));
+    setLoading(true); setError(null);
+    api.get<MaintenanceRecord[]>('/maintenance').then(setRecords).catch((e: ApiError) => setError(e.message)).finally(() => setLoading(false));
   }
-
   function fetchVehicles() {
-    api
-      .get<Vehicle[]>('/vehicles')
-      .then(setVehicles)
-      .catch(() => {
-        /* the log table still works without the picker list; form will just show no options */
-      });
+    api.get<Vehicle[]>('/vehicles').then(setVehicles).catch(() => {});
   }
-
-  useEffect(() => {
-    fetchRecords();
-    fetchVehicles();
-  }, []);
-
-  // Only vehicles that can legally be sent for service — server re-validates regardless.
+  useEffect(() => { fetchRecords(); fetchVehicles(); }, []);
   const serviceableVehicles = vehicles.filter((v) => v.status === 'AVAILABLE');
 
   async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setFormError(null);
-    setFieldErrors({});
-    setSubmitting(true);
+    e.preventDefault(); setFormError(null); setFieldErrors({}); setSubmitting(true);
     try {
-      await api.post<MaintenanceRecord>('/maintenance', {
-        vehicleId: form.vehicleId,
-        serviceType: form.serviceType.trim(),
-        cost: form.cost,
-        serviceDate: form.serviceDate,
-        notes: form.notes.trim() || undefined,
-      });
-      setForm({ ...EMPTY_FORM, serviceDate: todayIso() });
-      fetchRecords();
-      fetchVehicles();
+      await api.post<MaintenanceRecord>('/maintenance', { vehicleId: form.vehicleId, serviceType: form.serviceType.trim(), cost: form.cost, serviceDate: form.serviceDate, notes: form.notes.trim() || undefined });
+      setForm({ ...EMPTY_FORM, serviceDate: todayIso() }); fetchRecords(); fetchVehicles();
     } catch (err) {
-      if (err instanceof ApiError) {
-        setFormError(err.message);
-        if (err.details) setFieldErrors(err.details);
-      } else {
-        setFormError('Something went wrong. Please try again.');
-      }
-    } finally {
-      setSubmitting(false);
-    }
+      if (err instanceof ApiError) { setFormError(err.message); if (err.details) setFieldErrors(err.details); }
+      else { setFormError('Something went wrong. Please try again.'); }
+    } finally { setSubmitting(false); }
   }
 
   async function closeService(record: MaintenanceRecord) {
-    setRowError(null);
-    setClosingId(record.id);
+    setRowError(null); setClosingId(record.id);
     try {
       await api.patch<MaintenanceRecord>(`/maintenance/${record.id}/close`, {});
-      fetchRecords();
-      fetchVehicles();
-    } catch (err) {
-      setRowError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
-    } finally {
-      setClosingId(null);
-    }
+      fetchRecords(); fetchVehicles();
+    } catch (err) { setRowError(err instanceof ApiError ? err.message : 'Something went wrong.'); } 
+    finally { setClosingId(null); }
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Maintenance</h1>
+    <div className="font-poppins flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 shrink-0">
+        <h1 className="text-2xl font-semibold tracking-tight text-black flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-[#1B5E47] bg-white shadow-sm">
+            <Wrench01Icon size={22} strokeWidth={2.5} />
+          </div>
+          Maintenance
+        </h1>
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 xl:grid-cols-3">
         {canEdit && (
-          <Card className="lg:col-span-1">
-            <CardContent className="p-6">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Log Service Record
-              </h2>
+          <div className={`${cardStyles} bg-[#E5F5EF] xl:col-span-1`}>
+            <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-[#1B5E47]">Log Service Record</h2>
+            {formError && <div className="mb-4 rounded-2xl border-none bg-white px-4 py-3 text-sm font-semibold text-red-600 shadow-sm">{formError}</div>}
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <div className="space-y-2 relative">
+                <label htmlFor="vehicleId" className="text-xs font-semibold text-[#1B5E47]/70">Vehicle</label>
+                <Dropdown 
+                  value={form.vehicleId} 
+                  onChange={(val) => setForm({ ...form, vehicleId: val })} 
+                  options={[{label: 'Select a vehicle…', value: ''}, ...serviceableVehicles.map(v => ({ label: `${v.registrationNo} — ${v.name}`, value: v.id }))]} 
+                  className="flex h-[46px] w-full rounded-2xl border-none bg-gray-50 px-4 text-sm font-medium text-black outline-none focus:ring-2 focus:ring-[#1B5E47]/20 transition-all"
+                />
+                {fieldErrors.vehicleId && <p className="text-xs font-medium text-red-500">{fieldErrors.vehicleId}</p>}
+                {serviceableVehicles.length === 0 && <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mt-2">No vehicles are currently available for service.</p>}
+              </div>
 
-              {formError && (
-                <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  {formError}
-                </div>
-              )}
+              <div className="space-y-2">
+                <label htmlFor="serviceType" className="text-xs font-semibold text-[#1B5E47]/70">Service Type</label>
+                <input id="serviceType" className={inputStyles} placeholder="Oil Change, Engine Repair…" value={form.serviceType} onChange={(e) => setForm({ ...form, serviceType: e.target.value })} />
+                {fieldErrors.serviceType && <p className="text-xs font-medium text-red-500">{fieldErrors.serviceType}</p>}
+              </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                <div className="space-y-1.5">
-                  <Label htmlFor="vehicleId">Vehicle</Label>
-                  <select
-                    id="vehicleId"
-                    required
-                    className={selectClass}
-                    value={form.vehicleId}
-                    onChange={(e) => setForm({ ...form, vehicleId: e.target.value })}
-                    aria-invalid={!!fieldErrors.vehicleId}
-                  >
-                    <option value="" disabled>
-                      Select a vehicle…
-                    </option>
-                    {serviceableVehicles.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.registrationNo} — {v.name}
-                      </option>
-                    ))}
-                  </select>
-                  {fieldErrors.vehicleId && (
-                    <p className="text-xs text-destructive">{fieldErrors.vehicleId}</p>
-                  )}
-                  {serviceableVehicles.length === 0 && (
-                    <p className="text-xs text-muted-foreground">No vehicles are currently available for service.</p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <label htmlFor="cost" className="text-xs font-semibold text-[#1B5E47]/70">Cost</label>
+                <input id="cost" type="number" min={0} step="0.01" className={inputStyles} value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
+                {fieldErrors.cost && <p className="text-xs font-medium text-red-500">{fieldErrors.cost}</p>}
+              </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="serviceType">Service Type</Label>
-                  <Input
-                    id="serviceType"
-                    placeholder="Oil Change, Engine Repair…"
-                    value={form.serviceType}
-                    onChange={(e) => setForm({ ...form, serviceType: e.target.value })}
-                    aria-invalid={!!fieldErrors.serviceType}
-                  />
-                  {fieldErrors.serviceType && (
-                    <p className="text-xs text-destructive">{fieldErrors.serviceType}</p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <label htmlFor="serviceDate" className="text-xs font-semibold text-[#1B5E47]/70">Service Date</label>
+                <input id="serviceDate" type="date" className={inputStyles} value={form.serviceDate} onChange={(e) => setForm({ ...form, serviceDate: e.target.value })} />
+                {fieldErrors.serviceDate && <p className="text-xs font-medium text-red-500">{fieldErrors.serviceDate}</p>}
+              </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="cost">Cost</Label>
-                  <Input
-                    id="cost"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={form.cost}
-                    onChange={(e) => setForm({ ...form, cost: e.target.value })}
-                    aria-invalid={!!fieldErrors.cost}
-                  />
-                  {fieldErrors.cost && <p className="text-xs text-destructive">{fieldErrors.cost}</p>}
-                </div>
+              <div className="space-y-2">
+                <label htmlFor="notes" className="text-xs font-semibold text-[#1B5E47]/70">Notes (optional)</label>
+                <textarea id="notes" rows={3} className="w-full rounded-2xl bg-gray-50 border-none px-4 py-3 text-sm font-medium text-black outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B5E47]/20 transition-all resize-none" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="serviceDate">Service Date</Label>
-                  <Input
-                    id="serviceDate"
-                    type="date"
-                    value={form.serviceDate}
-                    onChange={(e) => setForm({ ...form, serviceDate: e.target.value })}
-                    aria-invalid={!!fieldErrors.serviceDate}
-                  />
-                  {fieldErrors.serviceDate && (
-                    <p className="text-xs text-destructive">{fieldErrors.serviceDate}</p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="notes">Notes (optional)</Label>
-                  <textarea
-                    id="notes"
-                    rows={3}
-                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  />
-                </div>
-
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? 'Saving…' : 'Log Service'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              <button type="submit" className={`w-full mt-4 ${primaryBtn}`} disabled={submitting}>{submitting ? 'Saving…' : 'Log Service'}</button>
+            </form>
+          </div>
         )}
 
-        <Card className={canEdit ? 'lg:col-span-2' : 'lg:col-span-3'}>
-          <CardContent className="space-y-4 p-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Service Log</h2>
-
-            {rowError && (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {rowError}
-              </div>
+        <div className={`${cardStyles} p-0 ${canEdit ? 'xl:col-span-2' : 'xl:col-span-3'} flex flex-col overflow-hidden`}>
+          <div className="p-6 pb-4 shrink-0">
+            <h2 className="text-lg font-semibold text-black">Service Log</h2>
+          </div>
+          {rowError && <div className="mx-6 mb-4 rounded-2xl border-none bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 shadow-sm shrink-0">{rowError}</div>}
+          
+          <div className="flex-1 overflow-auto px-6 pb-6 space-y-4">
+            {loading ? <p className="text-sm font-medium text-gray-500">Loading service records…</p> : !loading && error ? <p className="text-sm font-semibold text-red-500">{error}</p> : !loading && !error && records && records.length === 0 ? <p className="text-sm font-medium text-gray-500">No service records yet.</p> : (
+              records?.map((r) => (
+                <div key={r.id} className="rounded-2xl border border-gray-100 bg-white p-5 hover:border-gray-200 transition-colors shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <div className="font-semibold text-black flex items-center gap-2">
+                        {r.vehicle.registrationNo} <span className="font-medium text-gray-400 text-sm">— {r.vehicle.name}</span>
+                      </div>
+                      <p className="mt-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                        {r.serviceType} · {formatCurrency(r.cost)} · {new Date(r.serviceDate).toLocaleDateString()}
+                      </p>
+                      {r.notes && <p className="mt-2 text-xs font-medium text-gray-500 bg-gray-50 p-2 rounded-xl">Notes: {r.notes}</p>}
+                    </div>
+                    <StatusBadge status={r.status} />
+                  </div>
+                  {canEdit && r.status === 'IN_SHOP' && (
+                    <div className="mt-4 pt-4 border-t border-gray-50 flex gap-3">
+                      <button className={outlineBtn} disabled={closingId === r.id} onClick={() => closeService(r)}>
+                        {closingId === r.id ? 'Closing…' : 'Close Service'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
             )}
-
-            {loading && <p className="text-sm text-muted-foreground">Loading service records…</p>}
-            {!loading && error && <p className="text-sm text-destructive">{error}</p>}
-            {!loading && !error && records && records.length === 0 && (
-              <p className="text-sm text-muted-foreground">No service records yet.</p>
-            )}
-
-            {!loading && !error && records && records.length > 0 && (
-              <Table>
-                <THead>
-                  <TR>
-                    <TH>Vehicle</TH>
-                    <TH>Service Type</TH>
-                    <TH>Cost</TH>
-                    <TH>Date</TH>
-                    <TH>Status</TH>
-                    <TH>Notes</TH>
-                    {canEdit && <TH>Actions</TH>}
-                  </TR>
-                </THead>
-                <TBody>
-                  {records.map((r) => (
-                    <TR key={r.id}>
-                      <TD className="font-medium">
-                        {r.vehicle.registrationNo} — {r.vehicle.name}
-                      </TD>
-                      <TD>{r.serviceType}</TD>
-                      <TD>{formatCurrency(r.cost)}</TD>
-                      <TD>{new Date(r.serviceDate).toLocaleDateString()}</TD>
-                      <TD>
-                        <StatusBadge status={r.status} />
-                      </TD>
-                      <TD className="max-w-xs truncate text-muted-foreground">{r.notes ?? '—'}</TD>
-                      {canEdit && (
-                        <TD>
-                          {r.status === 'IN_SHOP' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={closingId === r.id}
-                              onClick={() => closeService(r)}
-                            >
-                              {closingId === r.id ? 'Closing…' : 'Close Service'}
-                            </Button>
-                          )}
-                        </TD>
-                      )}
-                    </TR>
-                  ))}
-                </TBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -4,12 +4,14 @@ import { Topbar } from './Topbar';
 
 export function AppLayout() {
   return (
-    <div className="flex h-screen overflow-hidden bg-muted/30">
+    <div className="flex h-screen overflow-hidden bg-[#F1F3F6] font-poppins text-[#111]">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+          <div className="mx-auto max-w-[1600px] h-full flex flex-col">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

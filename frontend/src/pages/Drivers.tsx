@@ -1,14 +1,9 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { AlertTriangle, Pencil, Plus } from 'lucide-react';
+import { Alert02Icon, PencilEdit01Icon, PlusSignIcon, UserGroupIcon } from 'hugeicons-react';
+import { Dropdown } from '@/components/ui/dropdown';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/badge';
-import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import type { Driver, DriverStatus } from '@/types';
 
 interface DriverForm {
@@ -26,6 +21,11 @@ const emptyForm: DriverForm = {
 
 const dateInput = (value: string) => value.slice(0, 10);
 
+const cardStyles = 'bg-white rounded-[32px] shadow-sm flex flex-col min-h-0 border-none p-6';
+const inputStyles = 'w-full rounded-2xl bg-gray-50 border-none px-4 py-3 text-sm font-medium text-black outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B5E47]/20 transition-all';
+const primaryBtn = 'rounded-2xl bg-[#1B5E47] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#154a38] transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2';
+const outlineBtn = 'rounded-2xl bg-white px-6 py-2.5 text-sm font-semibold text-gray-500 shadow-sm border border-gray-100 hover:text-black hover:bg-gray-50 transition-colors disabled:opacity-70 flex items-center justify-center gap-2';
+
 export default function Drivers() {
   const { canWrite } = useAuth();
   const writable = canWrite('drivers');
@@ -37,6 +37,7 @@ export default function Drivers() {
   const [form, setForm] = useState<DriverForm>(emptyForm);
   const [editing, setEditing] = useState<Driver | null>(null);
   const [saving, setSaving] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -61,6 +62,7 @@ export default function Drivers() {
     });
     setFormError(null);
     setFieldErrors({});
+    setFormOpen(true);
   };
 
   const resetForm = () => {
@@ -68,6 +70,7 @@ export default function Drivers() {
     setForm(emptyForm);
     setFormError(null);
     setFieldErrors({});
+    setFormOpen(false);
   };
 
   const submit = async (event: FormEvent) => {
@@ -100,56 +103,139 @@ export default function Drivers() {
   };
 
   const field = (key: keyof DriverForm, value: string) => setForm((current) => ({ ...current, [key]: value }));
-  const message = (key: string) => fieldErrors[key] && <p className="mt-1 text-xs text-destructive">{fieldErrors[key]}</p>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="font-poppins h-full flex flex-col gap-6 overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-4 shrink-0">
         <div>
-          <h1 className="text-2xl font-semibold">Drivers &amp; Safety</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Expired licenses and suspended drivers cannot be assigned to trips.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-black flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-[#1B5E47] bg-white shadow-sm">
+              <UserGroupIcon size={22} strokeWidth={2.5} />
+            </div>
+            Drivers &amp; Safety
+          </h1>
+          <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Expired licenses and suspended drivers cannot be assigned to trips.</p>
         </div>
-        {writable && <Button onClick={resetForm}><Plus className="h-4 w-4" /> Add Driver</Button>}
+        {writable && (
+          <button className={formOpen ? outlineBtn : primaryBtn} onClick={formOpen ? resetForm : () => setFormOpen(true)}>
+            {formOpen ? 'Cancel' : <><PlusSignIcon size={18} strokeWidth={2.5} /> Add Driver</>}
+          </button>
+        )}
       </div>
 
-      {writable && (
-        <Card>
-          <CardHeader><CardTitle>{editing ? `Edit ${editing.name}` : 'Add Driver'}</CardTitle></CardHeader>
-          <CardContent>
-            <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" onSubmit={submit}>
-              <div><Label htmlFor="driver-name">Driver name</Label><Input id="driver-name" value={form.name} onChange={(e) => field('name', e.target.value)} />{message('name')}</div>
-              <div><Label htmlFor="license-no">License number</Label><Input id="license-no" value={form.licenseNo} onChange={(e) => field('licenseNo', e.target.value)} />{message('licenseNo')}</div>
-              <div><Label htmlFor="license-category">Category</Label><Select id="license-category" value={form.licenseCategory} onChange={(e) => field('licenseCategory', e.target.value)}><option value="LMV">LMV</option><option value="HMV">HMV</option></Select>{message('licenseCategory')}</div>
-              <div><Label htmlFor="license-expiry">License expiry</Label><Input id="license-expiry" type="date" value={form.licenseExpiry} onChange={(e) => field('licenseExpiry', e.target.value)} />{message('licenseExpiry')}</div>
-              <div><Label htmlFor="contact">Contact</Label><Input id="contact" value={form.contact} onChange={(e) => field('contact', e.target.value)} />{message('contact')}</div>
-              <div><Label htmlFor="completion-rate">Trip completion rate (%)</Label><Input id="completion-rate" type="number" min="0" max="100" value={form.tripCompletionRate} onChange={(e) => field('tripCompletionRate', e.target.value)} />{message('tripCompletionRate')}</div>
-              {formError && <p className="text-sm text-destructive md:col-span-2 xl:col-span-3">{formError}</p>}
-              <div className="flex gap-2 md:col-span-2 xl:col-span-3"><Button type="submit" disabled={saving}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Create Driver'}</Button>{editing && <Button type="button" variant="outline" onClick={resetForm}>Cancel</Button>}</div>
+      {writable && formOpen && (
+        <div className={`${cardStyles} shrink-0 bg-[#E5F5EF] p-8`}>
+            <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-[#1B5E47]">
+              {editing ? `Edit ${editing.name}` : 'Add Driver'}
+            </h2>
+            <form className="grid gap-6 md:grid-cols-2 xl:grid-cols-3" onSubmit={submit} noValidate>
+              <div className="space-y-2">
+                <label htmlFor="driver-name" className="text-xs font-semibold text-gray-600">Driver name</label>
+                <input id="driver-name" className={inputStyles} value={form.name} onChange={(e) => field('name', e.target.value)} />
+                {fieldErrors.name && <p className="text-xs font-medium text-red-500">{fieldErrors.name}</p>}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="license-no" className="text-xs font-semibold text-gray-600">License number</label>
+                <input id="license-no" className={inputStyles} value={form.licenseNo} onChange={(e) => field('licenseNo', e.target.value)} />
+                {fieldErrors.licenseNo && <p className="text-xs font-medium text-red-500">{fieldErrors.licenseNo}</p>}
+              </div>
+              <div className="space-y-2 relative">
+                <label htmlFor="license-category" className="text-xs font-semibold text-gray-600">Category</label>
+                <Dropdown 
+                  value={form.licenseCategory} 
+                  onChange={(val) => field('licenseCategory', val)} 
+                  options={[{label: 'LMV', value: 'LMV'}, {label: 'HMV', value: 'HMV'}]} 
+                  className="flex h-11 w-full rounded-2xl border-none bg-gray-50 px-4 text-sm font-medium text-black outline-none focus:ring-2 focus:ring-[#1B5E47]/20 transition-all"
+                />
+                {fieldErrors.licenseCategory && <p className="text-xs font-medium text-red-500">{fieldErrors.licenseCategory}</p>}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="license-expiry" className="text-xs font-semibold text-gray-600">License expiry</label>
+                <input id="license-expiry" type="date" className={inputStyles} value={form.licenseExpiry} onChange={(e) => field('licenseExpiry', e.target.value)} />
+                {fieldErrors.licenseExpiry && <p className="text-xs font-medium text-red-500">{fieldErrors.licenseExpiry}</p>}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="contact" className="text-xs font-semibold text-gray-600">Contact</label>
+                <input id="contact" className={inputStyles} value={form.contact} onChange={(e) => field('contact', e.target.value)} />
+                {fieldErrors.contact && <p className="text-xs font-medium text-red-500">{fieldErrors.contact}</p>}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="completion-rate" className="text-xs font-semibold text-gray-600">Trip completion rate (%)</label>
+                <input id="completion-rate" type="number" min="0" max="100" className={inputStyles} value={form.tripCompletionRate} onChange={(e) => field('tripCompletionRate', e.target.value)} />
+                {fieldErrors.tripCompletionRate && <p className="text-xs font-medium text-red-500">{fieldErrors.tripCompletionRate}</p>}
+              </div>
+              
+              {formError && <div className="md:col-span-2 xl:col-span-3 rounded-2xl border-none bg-white px-4 py-3 text-sm font-semibold text-red-600 shadow-sm">{formError}</div>}
+              
+              <div className="flex items-end gap-3 md:col-span-2 xl:col-span-3 mt-4">
+                <button type="submit" className={primaryBtn} disabled={saving}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Create Driver'}</button>
+                {editing && <button type="button" className={outlineBtn} onClick={resetForm}>Cancel</button>}
+              </div>
             </form>
-          </CardContent>
-        </Card>
+        </div>
       )}
 
-      <Card>
-        <CardContent className="p-0">
-          {loading ? <p className="p-6 text-muted-foreground">Loading drivers…</p> : error ? <p className="p-6 text-destructive">{error}</p> : drivers.length === 0 ? <p className="p-6 text-muted-foreground">No drivers have been added yet.</p> : (
-            <Table>
-              <THead><TR><TH>Driver</TH><TH>License</TH><TH>Expiry</TH><TH>Contact</TH><TH>Completion</TH><TH>Safety</TH><TH>Status</TH>{writable && <TH>Actions</TH>}</TR></THead>
-              <TBody>{drivers.map((driver) => (
-                <TR key={driver.id}>
-                  <TD className="font-medium">{driver.name}<div className="text-xs text-muted-foreground">{driver.licenseCategory}</div></TD>
-                  <TD>{driver.licenseNo}</TD>
-                  <TD className={driver.licenseExpired ? 'font-medium text-destructive' : ''}>{driver.licenseExpired && <AlertTriangle className="mr-1 inline h-3.5 w-3.5" />}{dateInput(driver.licenseExpiry)}{driver.licenseExpired && <div className="text-xs">EXPIRED</div>}</TD>
-                  <TD>{driver.contact}</TD><TD>{Number(driver.tripCompletionRate)}%</TD>
-                  <TD>{driver.assignable ? <span className="text-status-available">Clear</span> : <span className="text-destructive">Blocked</span>}</TD>
-                  <TD><StatusBadge status={driver.status} /></TD>
-                  {writable && <TD><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => beginEdit(driver)}><Pencil className="h-3.5 w-3.5" /> Edit</Button>{driver.status !== 'ON_TRIP' && <Select aria-label={`Set ${driver.name} status`} className="h-9 w-auto" value={driver.status} onChange={(e) => void setStatus(driver, e.target.value as DriverStatus)}><option value="AVAILABLE">Available</option><option value="OFF_DUTY">Off Duty</option><option value="SUSPENDED">Suspended</option></Select>}</div></TD>}
-                </TR>
-              ))}</TBody>
-            </Table>
+      <div className={`${cardStyles} flex-1 overflow-hidden p-0`}>
+          {loading ? <p className="p-8 font-medium text-gray-500 text-sm">Loading drivers…</p> : error ? <p className="p-8 font-semibold text-red-500 text-sm">{error}</p> : drivers.length === 0 ? <p className="p-8 font-medium text-gray-500 text-sm text-center">No drivers have been added yet.</p> : (
+            <div className="flex-1 overflow-auto px-4 py-2">
+               <table className="w-full text-left border-separate border-spacing-y-2">
+                 <thead className="sticky top-0 bg-white z-10">
+                   <tr>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Driver</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">License</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Expiry</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Contact</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Completion</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Safety</th>
+                     <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                     {writable && <th className="px-5 py-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider text-right">Actions</th>}
+                   </tr>
+                 </thead>
+                 <tbody>
+                    {drivers.map((driver) => (
+                      <tr key={driver.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-5 py-4 rounded-l-2xl">
+                          <div className="text-sm font-semibold text-black">{driver.name}</div>
+                          <div className="text-[10px] font-semibold text-gray-400">{driver.licenseCategory}</div>
+                        </td>
+                        <td className="px-5 py-4 text-sm font-medium text-gray-600">{driver.licenseNo}</td>
+                        <td className={`px-5 py-4 text-sm font-medium ${driver.licenseExpired ? 'text-red-600' : 'text-gray-600'}`}>
+                          {driver.licenseExpired && <Alert02Icon size={14} className="inline mr-1 -mt-0.5 text-red-600" />}
+                          {dateInput(driver.licenseExpiry)}
+                          {driver.licenseExpired && <div className="text-[10px] font-semibold uppercase mt-0.5">EXPIRED</div>}
+                        </td>
+                        <td className="px-5 py-4 text-sm font-medium text-gray-600">{driver.contact}</td>
+                        <td className="px-5 py-4 text-sm font-semibold text-black">{Number(driver.tripCompletionRate)}%</td>
+                        <td className="px-5 py-4">
+                          {driver.assignable ? <span className="text-[10px] font-semibold tracking-wider text-[#1B5E47] uppercase">Clear</span> : <span className="text-[10px] font-semibold tracking-wider text-red-600 uppercase">Blocked</span>}
+                        </td>
+                        <td className="px-5 py-4">
+                          <StatusBadge status={driver.status} />
+                        </td>
+                        {writable && (
+                          <td className="px-5 py-4 rounded-r-2xl text-right">
+                            <div className="flex justify-end gap-2 items-center">
+                              <button className="px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 bg-white shadow-sm border border-gray-100 hover:text-black hover:bg-gray-50 transition-colors flex items-center gap-1" onClick={() => beginEdit(driver)}>
+                                <PencilEdit01Icon size={14} strokeWidth={2.5} /> Edit
+                              </button>
+                              {driver.status !== 'ON_TRIP' && (
+                                <Dropdown 
+                                  value={driver.status} 
+                                  onChange={(val) => void setStatus(driver, val as DriverStatus)} 
+                                  options={[{label: 'Available', value: 'AVAILABLE'}, {label: 'Off Duty', value: 'OFF_DUTY'}, {label: 'Suspended', value: 'SUSPENDED'}]} 
+                                  className="w-[120px] px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 bg-white shadow-sm border border-gray-100 outline-none"
+                                />
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                 </tbody>
+               </table>
+            </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }
